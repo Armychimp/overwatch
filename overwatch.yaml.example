@@ -1,0 +1,54 @@
+# Overwatch TUI Process Monitor - Example Configuration
+#
+# Usage:
+#   python -m overwatch overwatch.yaml.example
+#   overwatch overwatch.yaml.example
+#
+# Or run any command directly:
+#   python -m overwatch "python my_app.py --verbose"
+
+# Command to run and monitor
+command: "python demo_app.py"
+
+# Environment variables injected into the subprocess
+# PYTHONUNBUFFERED is always set to "1" automatically
+env:
+  PYTHONUNBUFFERED: "1"
+
+# Log panel settings
+log:
+  max_lines: 10000    # Maximum lines retained in the log buffer
+  wrap: true           # Wrap long lines
+  timestamp: false     # Prefix each line with HH:MM:SS
+
+# Hotkey bindings (single character)
+hotkeys:
+  kill: "k"            # Kill the running process
+  reload: "r"          # Kill and restart the process
+  clear: "c"           # Clear the log panel
+  quit: "q"            # Quit Overwatch
+  toggle_scroll: "s"   # Pause/resume auto-scroll
+  toggle_sidebar: "b"  # Show/hide the monitor sidebar
+
+# Monitor plugins displayed in the sidebar
+monitors:
+  # Process stats: CPU, memory, threads via psutil
+  - type: process_stats
+    refresh: 2
+
+  # Custom metrics: reads SDK metrics sent via IPC
+  # Use from your app: from overwatch.sdk import metrics
+  - type: custom_metrics
+
+  # File watcher: polls for file changes matching glob patterns
+  # - type: file_watcher
+  #   paths: ["./data/*.json", "./logs/*.log"]
+  #   refresh: 5
+
+  # HTTP health check: polls endpoints for availability
+  # - type: http_health
+  #   endpoints:
+  #     - url: "http://localhost:8080/health"
+  #       label: "API"
+  #       timeout: 3
+  #   refresh: 10

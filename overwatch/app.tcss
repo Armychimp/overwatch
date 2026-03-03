@@ -1,0 +1,17 @@
+Screen {
+    layout: grid;
+    grid-size: 2 1;
+    grid-columns: 1fr auto;
+}
+
+#log-panel {
+    column-span: 1;
+}
+
+#monitor-sidebar {
+    width: 28;
+}
+
+StatusBar {
+    column-span: 2;
+}

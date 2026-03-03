@@ -1,0 +1,3 @@
+"""Overwatch - TUI Process Monitor."""
+
+__version__ = "0.1.0"
