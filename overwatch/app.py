@@ -32,6 +32,11 @@ class OverwatchApp(App):
         self._sidebar_visible = True
 
     def compose(self) -> ComposeResult:
+        # Docked widgets first
+        self._status_bar = StatusBar(self.config.hotkeys)
+        yield self._status_bar
+
+        # Main content area (horizontal layout from CSS)
         self._log_panel = LogPanel(
             max_lines=self.config.log.max_lines,
             wrap=self.config.log.wrap,
@@ -58,9 +63,6 @@ class OverwatchApp(App):
             id="monitor-sidebar",
         )
         yield self._sidebar
-
-        self._status_bar = StatusBar(self.config.hotkeys)
-        yield self._status_bar
 
     async def on_mount(self) -> None:
         # Start IPC server
