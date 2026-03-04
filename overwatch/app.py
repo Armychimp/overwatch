@@ -19,8 +19,6 @@ class OverwatchApp(App):
     CSS_PATH = "app.tcss"
     TITLE = "Overwatch"
 
-    BINDINGS = []  # We handle keys manually via on_key
-
     def __init__(self, config: AppConfig):
         super().__init__()
         self.config = config
@@ -30,6 +28,17 @@ class OverwatchApp(App):
         self._sidebar: MonitorSidebar | None = None
         self._status_bar: StatusBar | None = None
         self._sidebar_visible = True
+
+        # Build BINDINGS from config hotkeys
+        hk = config.hotkeys
+        self._bindings_list = [
+            Binding(hk.quit, "ow_quit", "Quit", priority=True),
+            Binding(hk.kill, "ow_kill", "Kill", priority=True),
+            Binding(hk.reload, "ow_reload", "Reload", priority=True),
+            Binding(hk.clear, "ow_clear", "Clear", priority=True),
+            Binding(hk.toggle_scroll, "ow_toggle_scroll", "Scroll", priority=True),
+            Binding(hk.toggle_sidebar, "ow_toggle_sidebar", "Sidebar", priority=True),
+        ]
 
     def compose(self) -> ComposeResult:
         # Docked widgets first
@@ -65,6 +74,13 @@ class OverwatchApp(App):
         yield self._sidebar
 
     async def on_mount(self) -> None:
+        # Register bindings dynamically (from config hotkeys)
+        for binding in self._bindings_list:
+            self._bindings.bind(
+                binding.key, binding.action, binding.description,
+                priority=binding.priority,
+            )
+
         # Start IPC server
         socket_path = await self._ipc.start()
 
@@ -86,57 +102,40 @@ class OverwatchApp(App):
         if self._status_bar:
             self._status_bar.process_state = info.state.value
 
-    async def on_key(self, event) -> None:
-        hk = self.config.hotkeys
-        key = event.character or event.key
-
-        if key == hk.quit:
-            await self._do_quit()
-        elif key == hk.kill:
-            await self._do_kill()
-        elif key == hk.reload:
-            await self._do_reload()
-        elif key == hk.clear:
-            self._do_clear()
-        elif key == hk.toggle_scroll:
-            self._do_toggle_scroll()
-        elif key == hk.toggle_sidebar:
-            self._do_toggle_sidebar()
-
     async def _shutdown(self) -> None:
         """Clean up process and IPC on exit."""
         if self._process and self._process.is_running:
             await self._process.kill()
         await self._ipc.stop()
 
-    async def _do_quit(self) -> None:
+    async def action_ow_quit(self) -> None:
         await self._shutdown()
         self.exit()
 
-    async def _do_kill(self) -> None:
+    async def action_ow_kill(self) -> None:
         if self._process and self._process.is_running:
             if self._log_panel:
                 self._log_panel.write_line("\x1b[33m--- process killed ---\x1b[0m")
             await self._process.kill()
 
-    async def _do_reload(self) -> None:
+    async def action_ow_reload(self) -> None:
         if self._process:
             if self._log_panel:
                 self._log_panel.write_line("\x1b[36m--- reloading ---\x1b[0m")
             self._ipc.store.clear()
             await self._process.reload()
 
-    def _do_clear(self) -> None:
+    def action_ow_clear(self) -> None:
         if self._log_panel:
             self._log_panel.clear()
 
-    def _do_toggle_scroll(self) -> None:
+    def action_ow_toggle_scroll(self) -> None:
         if self._log_panel:
             active = self._log_panel.toggle_auto_scroll()
             if self._status_bar:
                 self._status_bar.scroll_active = active
 
-    def _do_toggle_sidebar(self) -> None:
+    def action_ow_toggle_sidebar(self) -> None:
         if self._sidebar:
             self._sidebar_visible = not self._sidebar_visible
             self._sidebar.display = self._sidebar_visible
